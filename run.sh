@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-export DATA=/home/nfs/zsc/yuan/coldata_dbg/dataset
+export DATA=coldata_dbg/dataset
 export RANK=0
 export LOCAL_RANK=0
 export WORLD_SIZE=1

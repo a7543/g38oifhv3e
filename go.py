@@ -21,14 +21,14 @@ def main():
     print('Build data loader')
 
     train_ds = YuanDataset(
-        os.environ['DATA'], vocab_path='/home/nfs/zsc/yuan/coldata_dbg/vocab.txt', seq_len=1262)
+        os.environ['DATA'], vocab_path='coldata_dbg/vocab.txt', seq_len=1261)
     train_dataloader = utils.get_dataloader(
         train_ds, seed=42, batch_size=32, shuffle=True)
         
     print('Build model')
 
     model = GPT(vocab_size=53228, hidden_size=16,
-                max_position_embeddings=1262, depth=2, num_heads=4)
+                max_position_embeddings=1261, depth=2, num_heads=4)
 
     criterion = GPTLMLoss()
 
