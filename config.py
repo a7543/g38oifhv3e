@@ -1,7 +1,5 @@
 from colossalai.amp import AMP_TYPE
 from titans.loss.lm_loss import GPTLMLoss
-from titans.model.gpt import GPT
-from torch.optim import Adam
 
 TENSOR_PARALLEL = 1
 
