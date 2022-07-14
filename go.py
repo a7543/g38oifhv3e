@@ -8,7 +8,8 @@ import torch.nn as nn
 from colossalai.context.parallel_mode import ParallelMode
 from colossalai.core import global_context as gpc
 from colossalai import nn as col_nn
-from colossalai.engine.schedule import (InterleavedPipelineSchedule, PipelineSchedule)
+from colossalai.engine.schedule import (
+    InterleavedPipelineSchedule, PipelineSchedule)
 from colossalai.logging import disable_existing_loggers, get_dist_logger
 from colossalai.nn import LinearWarmupLR
 from colossalai.trainer import Trainer, hooks
@@ -17,6 +18,7 @@ from colossalai.utils.timer import MultiTimer
 from colossalai.zero.init_ctx import ZeroInitContext
 from colossalai.pipeline.pipelinable import PipelinableContext
 from titans.loss.lm_loss import GPTLMLoss
+
 
 def calc_local_model_size(model: torch.nn.Module):
     numel_per_device = 0
@@ -33,13 +35,15 @@ def main():
     if args.from_torch:
         colossalai.launch_from_torch(config=args.config)
     else:
-        colossalai.launch_from_slurm(config=args.config, host=args.host, port=29500, seed=42)
+        colossalai.launch_from_slurm(
+            config=args.config, host=args.host, port=29500, seed=42)
 
     logger = get_dist_logger()
 
     logger.info('Build data loader', ranks=[0])
     from yuan import YuanDataset
-    train_ds = YuanDataset(os.environ['DATA'], vocab_path='/home/nfs/zsc/yuan/go/coldata_dbg/vocab.txt', seq_len=gpc.config.SEQ_LEN)
+    train_ds = YuanDataset(
+        os.environ['DATA'], vocab_path='/home/nfs/zsc/yuan/go/coldata_dbg/vocab.txt', seq_len=gpc.config.SEQ_LEN)
     train_dataloader = utils.get_dataloader(train_ds,
                                             seed=42,
                                             batch_size=gpc.config.BATCH_SIZE,
@@ -77,8 +81,8 @@ def main():
 
         # GPT2_small exec_seq
         # (lyl)TODO: The exec_seq for gpt3 will be added here and to_layer_list should be more friendly to use.
-        exec_seq = ['embed', mask_function, 'blocks.0', 'blocks.1', 'blocks.2', 'blocks.3', 'blocks.4', 'blocks.5', (mask_function, "front"), \
-                    'blocks.6', 'blocks.7', 'blocks.8', 'blocks.9', 'blocks.10', 'blocks.11', 'norm', 'head']
+        exec_seq = ['embed', mask_function, 'blocks.0', 'blocks.1', 'blocks.2', 'blocks.3', 'blocks.4', 'blocks.5', 'blocks.6', 'blocks.7', 'blocks.8', 'blocks.9',
+                    (mask_function, "front"), 'blocks.10', 'blocks.11', 'blocks.12', 'blocks.13', 'blocks.14', 'blocks.15', 'blocks.16', 'blocks.17', 'blocks.18', 'blocks.19', 'norm', 'head']
         pipelinable.to_layer_list(exec_seq)
         ctx = contextlib.nullcontext()
         # (lyl)TODO: Zero context and pipelinable context should be integrated into one context.
@@ -105,9 +109,11 @@ def main():
         criterion = GPTLMLoss()
 
     logger.info('Build optimizer', ranks=[0])
-    optimizer = gpc.config.optimizer.pop('type')(model.parameters(), **gpc.config.optimizer)
+    optimizer = gpc.config.optimizer.pop('type')(
+        model.parameters(), **gpc.config.optimizer)
 
-    lr_scheduler = LinearWarmupLR(optimizer, total_steps=gpc.config.NUM_EPOCHS, warmup_steps=5)
+    lr_scheduler = LinearWarmupLR(
+        optimizer, total_steps=gpc.config.NUM_EPOCHS, warmup_steps=5)
 
     engine, train_dataloader, _, lr_scheduler = colossalai.initialize(model,
                                                                       optimizer,
@@ -115,8 +121,10 @@ def main():
                                                                       train_dataloader=train_dataloader,
                                                                       lr_scheduler=lr_scheduler)
     global_batch_size = gpc.config.BATCH_SIZE * \
-        gpc.get_world_size(ParallelMode.DATA) * getattr(gpc.config, "gradient_accumulation", 1)
-    logger.info(f'Init done, global batch size = {global_batch_size}', ranks=[0])
+        gpc.get_world_size(ParallelMode.DATA) * \
+        getattr(gpc.config, "gradient_accumulation", 1)
+    logger.info(
+        f'Init done, global batch size = {global_batch_size}', ranks=[0])
 
     timier = MultiTimer()
 
@@ -128,10 +136,10 @@ def main():
         hooks.LogMetricByEpochHook(logger),
         hooks.ThroughputHook(ignored_steps=10, tflop_per_step=tflop),
         hooks.LogMetricByStepHook(),
-    # hooks.TensorboardHook(log_dir='./tb_logs', ranks=[0]),
+        # hooks.TensorboardHook(log_dir='./tb_logs', ranks=[0]),
         hooks.LogMemoryByEpochHook(logger),
-    # hooks.LogTimingByEpochHook(timer, logger),
-    # hooks.SaveCheckpointHook(checkpoint_dir='./ckpt')
+        # hooks.LogTimingByEpochHook(timer, logger),
+        # hooks.SaveCheckpointHook(checkpoint_dir='./ckpt')
     ]
 
     trainer.fit(train_dataloader=train_dataloader,

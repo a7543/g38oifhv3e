@@ -4,12 +4,16 @@ from titans.model.gpt import GPT
 from torch.optim import Adam
 
 
-BATCH_SIZE = 1
-SEQ_LEN = 2048
+BATCH_SIZE = 32
+#NUM_MICRO_BATCHES = 128 按需增加
+SEQ_LEN = 1024
 NUM_EPOCHS = 1
+HIDDEN_SIZE = 1024
+DEPTH = 20 #暂时不能改
 
 TENSOR_PARALLEL = 1
 PIPELINE = 1
+TENSOR_PARALLEL_MODE = '1d'
 
 optimizer = dict(
     type=Adam,
@@ -27,7 +31,7 @@ loss = dict(
 
 
 def gpt_cust(**kwargs):
-    return GPT(vocab_size=53228, max_position_embeddings=SEQ_LEN, hidden_size=3072, depth=10, num_heads=24, **kwargs)
+    return GPT(vocab_size=53228, max_position_embeddings=SEQ_LEN, hidden_size=HIDDEN_SIZE, depth=DEPTH, num_heads=1, **kwargs)
 
 
 model = dict(
@@ -37,5 +41,6 @@ model = dict(
 
 parallel = dict(
     pipeline=PIPELINE,
-    tensor=dict(size=TENSOR_PARALLEL, mode='1d'),
+
+    tensor=dict(size=TENSOR_PARALLEL, mode=TENSOR_PARALLEL_MODE),
 )
